@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FarmScale Tester — Layer 1 & Layer 2</title>
+  <style>
+    :root {
+      --bg: #f6f8f5;
+      --surface: #ffffff;
+      --surface-2: #eef2ec;
+      --text: #1b241c;
+      --muted: #5a695c;
+      --border: #d4ddd2;
+      --accent: #256d3a;
+      --accent-2: #1b522b;
+      --warn-bg: #fff4d6;
+      --warn-text: #7a4b00;
+      --warn-border: #f0c36d;
+      --err-bg: #fde8e8;
+      --err-text: #9b1c1c;
+      --ok-bg: #e6f4ea;
+      --ok-text: #137333;
+      --radius: 10px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #111612;
+        --surface: #1a211b;
+        --surface-2: #232c24;
+        --text: #e8efe8;
+        --muted: #9fb0a1;
+        --border: #324034;
+        --accent: #4caf68;
+        --accent-2: #3d9456;
+        --warn-bg: #3b2d12;
+        --warn-text: #ffd88a;
+        --warn-border: #8a641b;
+        --err-bg: #3a1919;
+        --err-text: #fca5a5;
+        --ok-bg: #163320;
+        --ok-text: #86efac;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #111612;
+      --surface: #1a211b;
+      --surface-2: #232c24;
+      --text: #e8efe8;
+      --muted: #9fb0a1;
+      --border: #324034;
+      --accent: #4caf68;
+      --accent-2: #3d9456;
+      --warn-bg: #3b2d12;
+      --warn-text: #ffd88a;
+      --warn-border: #8a641b;
+      --err-bg: #3a1919;
+      --err-text: #fca5a5;
+      --ok-bg: #163320;
+      --ok-text: #86efac;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .brand { font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .banner-mock {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border-bottom: 1px solid var(--warn-border);
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .hidden { display: none !important; }
+    main { max-width: 1024px; margin: 16px auto; padding: 0 12px 40px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h2, h3 { margin-top: 0; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    textarea { min-height: 76px; resize: vertical; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: var(--accent-2); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .goal-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .trace-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .trace-pill {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+    .trace-pill.ok { background: var(--ok-bg); color: var(--ok-text); }
+    .trace-pill.error { background: var(--err-bg); color: var(--err-text); }
+    .option-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--surface-2);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .option-card:hover { border-color: var(--accent); }
+    .option-card.selected { border: 2px solid var(--accent); }
+    .score-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .alert {
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+    }
+    .alert-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
+    .alert-err { background: var(--err-bg); color: var(--err-text); }
+    .alert-ok { background: var(--ok-bg); color: var(--ok-text); }
+    pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      max-height: 280px;
+    }
+    .row-inline { display: flex; gap: 8px; align-items: center; }
+    .row-inline > * { flex: 1; }
+    .row-inline > .shrink { flex: 0 0 auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">FarmScale — Crop Rotation Advisor</div>
+    <div class="toolbar">
+      <button class="btn" id="btn-demo" type="button">Demo Mode: ON</button>
+      <select id="lang-select" style="width:auto">
+        <option value="en">English</option>
+        <option value="bn">বাংলা (Bangla)</option>
+      </select>
+      <button class="btn" id="btn-theme" type="button">Theme</button>
+    </div>
+  </header>
+
+  <div id="mock-banner" class="banner-mock">
+    MOCK ML ACTIVE — Results are generated by the mock ML client (not real XGBoost predictions).
+  </div>
+
+  <main>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="advisor">Advisor</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- ADVISOR TAB -->
+    <section id="tab-advisor">
+      <div class="card">
+        <h3 id="lbl-loc-title">1. Location (Rajshahi Division)</h3>
+        <div class="grid-3">
+          <div>
+            <label for="loc-mode">Input Mode</label>
+            <select id="loc-mode">
+              <option value="dropdown">District & Upazila</option>
+              <option value="latlon">Latitude & Longitude</option>
+              <option value="chat">Type it in the chat</option>
+            </select>
+          </div>
+          <div id="loc-dd-district">
+            <label for="district-select">District</label>
+            <select id="district-select"></select>
+          </div>
+          <div id="loc-dd-upazila">
+            <label for="upazila-select">Upazila</label>
+            <select id="upazila-select"></select>
+          </div>
+          <div id="loc-lat-wrap" class="hidden">
+            <label for="lat-input">Latitude</label>
+            <input id="lat-input" type="number" step="0.001" placeholder="24.466" />
+          </div>
+          <div id="loc-lon-wrap" class="hidden">
+            <label for="lon-input">Longitude</label>
+            <input id="lon-input" type="number" step="0.001" placeholder="88.330" />
+          </div>
+        </div>
+
+        <h3 style="margin-top:16px" id="lbl-goal-title">2. Quick Options & Request</h3>
+        <div id="goal-pills" class="goal-pills"></div>
+
+        <label for="request-box" id="lbl-req">Your Request (editable)</label>
+        <textarea id="request-box" placeholder="Click a quick option above or type your request in English or Bangla..."></textarea>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btn-send" type="button">Get Recommendations</button>
+          <span id="status-msg" style="align-self:center; font-size:0.9rem; color:var(--muted)"></span>
+        </div>
+      </div>
+
+      <div id="results-area" class="hidden">
+        <div class="card">
+          <h3>Pipeline Step Tracker</h3>
+          <div id="trace-list" class="trace-list"></div>
+          <div id="summary-box" style="margin-top:12px;"></div>
+          <div id="caveat-box" class="alert alert-warn hidden"></div>
+          <div id="data-status-box" class="alert alert-warn hidden"></div>
+        </div>
+
+        <div class="card">
+          <h3>Ranked Rotation Options</h3>
+          <div id="options-grid" class="grid-3"></div>
+        </div>
+
+        <div id="detail-card" class="card hidden">
+          <h3>Option Details (No New ML Call)</h3>
+          <div id="detail-body"></div>
+        </div>
+
+        <div class="card">
+          <h3>Follow-up Question</h3>
+          <div class="row-inline">
+            <input id="followup-input" type="text" placeholder="Ask about these results or say 'Explain option 2'..." />
+            <button class="btn btn-primary shrink" id="btn-followup" type="button">Ask</button>
+          </div>
+          <div id="followup-answer" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card">
+          <details>
+            <summary style="cursor:pointer; font-weight:700;">Debug Panel (Intent, Layer 2, Raw ML, Prompts, Provider)</summary>
+            <div style="margin-top:10px;">
+              <h4>Provider & ML Metadata</h4>
+              <pre id="dbg-meta"></pre>
+              <h4>Parsed Intent JSON</h4>
+              <pre id="dbg-intent"></pre>
+              <h4>Layer 2 Summary</h4>
+              <pre id="dbg-layer2"></pre>
+              <h4>Raw ML Payload</h4>
+              <pre id="dbg-ml"></pre>
+              <h4>Exact Prompts Sent (Keys Masked)</h4>
+              <pre id="dbg-prompts"></pre>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section id="tab-settings" class="hidden">
+      <div class="card">
+        <h3>Active Provider & Routing</h3>
+        <div class="grid-3">
+          <div>
+            <label for="active-provider">Active Provider</label>
+            <select id="active-provider">
+              <option value="mock">mock (Demo)</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </div>
+          <div>
+            <label for="intent-provider">Intent Step Provider (optional override)</label>
+            <select id="intent-provider">
+              <option value="">Same as active</option>
+              <option value="mock">mock</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </div>
+          <div>
+            <label for="intent-model">Intent Step Model (optional)</label>
+            <input id="intent-model" type="text" placeholder="Leave blank to use active model" />
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label class="row-inline" style="justify-content:flex-start; gap:8px; cursor:pointer;">
+            <input id="remember-keys" type="checkbox" style="width:auto;" />
+            <span>Remember keys in this browser (localStorage) — <strong>OFF by default</strong></span>
+          </label>
+          <div id="remember-warn" class="alert alert-warn hidden">
+            Warning: Storing API keys in browser localStorage exposes them to any script running on this origin. Only enable on a trusted personal device.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>ML Source</h3>
+        <div class="grid-2">
+          <div>
+            <label for="ml-mode">ML Mode</label>
+            <select id="ml-mode">
+              <option value="mock">mock</option>
+              <option value="http">http</option>
+              <option value="inprocess">inprocess</option>
+            </select>
+          </div>
+          <div>
+            <label for="ml-http-url">ML HTTP URL (when mode=http)</label>
+            <input id="ml-http-url" type="text" value="http://localhost:8001" />
+          </div>
+        </div>
+      </div>
+
+      <div id="provider-sections"></div>
+    </section>
+  </main>
+
+  <script>
+    const PROVIDERS = ["anthropic", "gemini", "openai", "deepseek", "openrouter"];
+    const state = {
+      demoMode: true,
+      lang: "en",
+      gazetteer: null,
+      goals: [],
+      sessionId: null,
+      selectedGoalId: null,
+      providerConfigs: {}
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function initProviderSections() {
+      const container = $("provider-sections");
+      container.innerHTML = "";
+      PROVIDERS.forEach((p) => {
+        state.providerConfigs[p] = { apiKey: "", model: "", customModel: "", baseUrl: "", temperature: 0.2, maxTokens: 1200 };
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h3 style="text-transform:capitalize">${p}</h3>
+          <div class="grid-2">
+            <div>
+              <label>API Key</label>
+              <div class="row-inline">
+                <input id="key-${p}" type="password" placeholder="Paste ${p} API key" />
+                <button class="btn shrink" type="button" onclick="toggleKeyVis('${p}')">Show</button>
+              </div>
+            </div>
+            <div>
+              <label>Model (from provider or fallback)</label>
+              <div class="row-inline">
+                <select id="model-${p}"></select>
+                <button class="btn shrink" type="button" onclick="refreshModels('${p}')">Load</button>
+              </div>
+            </div>
+            <div>
+              <label>Custom Model ID (overrides dropdown)</label>
+              <input id="custom-model-${p}" type="text" placeholder="Optional custom model ID" />
+            </div>
+            <div>
+              <label>Base URL Override (optional)</label>
+              <input id="baseurl-${p}" type="text" placeholder="Default official endpoint" />
+            </div>
+            <div>
+              <label>Temperature</label>
+              <input id="temp-${p}" type="number" step="0.1" min="0" max="2" value="0.2" />
+            </div>
+            <div>
+              <label>Max Tokens</label>
+              <input id="maxtok-${p}" type="number" step="50" min="64" max="8192" value="1200" />
+            </div>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn" type="button" onclick="testProvider('${p}')">Test Connection</button>
+            <span id="test-res-${p}" style="font-size:0.9rem;"></span>
+          </div>
+        `;
+        container.appendChild(card);
+        refreshModels(p, true);
+      });
+    }
+
+    window.toggleKeyVis = (p) => {
+      const el = $(`key-${p}`);
+      el.type = el.type === "password" ? "text" : "password";
+    };
+
+    window.refreshModels = async (p, silent = false) => {
+      const key = $(`key-${p}`).value.trim();
+      const baseUrl = $(`baseurl-${p}`).value.trim();
+      const qs = baseUrl ? `?base_url=${encodeURIComponent(baseUrl)}` : "";
+      const headers = key ? { "x-api-key": key } : {};
+      try {
+        const res = await fetch(`/v1/providers/${p}/models${qs}`, { headers });
+        const data = await res.json();
+        const sel = $(`model-${p}`);
+        sel.innerHTML = "";
+        (data.models || []).forEach((m) => {
+          const opt = document.createElement("option");
+          opt.value = m;
+          opt.textContent = m;
+          sel.appendChild(opt);
+        });
+        if (!silent) {
+          $(`test-res-${p}`).textContent = `Loaded ${data.models.length} models (${data.source}).`;
+        }
+      } catch {
+        if (!silent) $(`test-res-${p}`).textContent = "Could not load models.";
+      }
+    };
+
+    window.testProvider = async (p) => {
+      const statusEl = $(`test-res-${p}`);
+      statusEl.textContent = "Testing...";
+      const model = $(`custom-model-${p}`).value.trim() || $(`model-${p}`).value;
+      const body = {
+        provider: p,
+        api_key: $(`key-${p}`).value.trim(),
+        model,
+        base_url: $(`baseurl-${p}`).value.trim() || null,
+      };
+      try {
+        const res = await fetch("/v1/providers/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        statusEl.textContent = data.message || (data.ok ? "Connected" : "Failed");
+        statusEl.style.color = data.ok ? "var(--ok-text)" : "var(--err-text)";
+      } catch {
+        statusEl.textContent = "Network error testing connection.";
+        statusEl.style.color = "var(--err-text)";
+      }
+    };
+
+    function getActiveConfig() {
+      if (state.demoMode) {
+        return { provider: "mock", api_key: null, model: "mock-farmscale-v1", base_url: null, temperature: 0.2, max_tokens: 1200 };
+      }
+      const p = $("active-provider").value;
+      if (p === "mock") {
+        return { provider: "mock", api_key: null, model: "mock-farmscale-v1", base_url: null, temperature: 0.2, max_tokens: 1200 };
+      }
+      return {
+        provider: p,
+        api_key: $(`key-${p}`).value.trim() || null,
+        model: $(`custom-model-${p}`).value.trim() || $(`model-${p}`).value,
+        base_url: $(`baseurl-${p}`).value.trim() || null,
+        temperature: parseFloat($(`temp-${p}`).value) || 0.2,
+        max_tokens: parseInt($(`maxtok-${p}`).value, 10) || 1200,
+      };
+    }
+
+    async function loadGazetteerAndGoals() {
+      const [gRes, goalRes] = await Promise.all([fetch("/v1/gazetteer"), fetch("/v1/goals")]);
+      state.gazetteer = await gRes.json();
+      const gData = await goalRes.json();
+      state.goals = gData.goals || [];
+      renderDistricts();
+      renderGoals();
+    }
+
+    function renderDistricts() {
+      const dSel = $("district-select");
+      dSel.innerHTML = "";
+      (state.gazetteer?.districts || []).forEach((d) => {
+        const opt = document.createElement("option");
+        opt.value = d.district;
+        opt.textContent = state.lang === "bn" ? `${d.district_bn} (${d.district})` : d.district;
+        dSel.appendChild(opt);
+      });
+      renderUpazilas();
+    }
+
+    function renderUpazilas() {
+      const dName = $("district-select").value;
+      const dObj = (state.gazetteer?.districts || []).find((d) => d.district === dName);
+      const uSel = $("upazila-select");
+      uSel.innerHTML = "";
+      (dObj?.upazilas || []).forEach((u) => {
+        const opt = document.createElement("option");
+        opt.value = u.upazila;
+        opt.textContent = state.lang === "bn" ? `${u.upazila_bn} (${u.upazila})` : u.upazila;
+        uSel.appendChild(opt);
+      });
+    }
+
+    function renderGoals() {
+      const box = $("goal-pills");
+      box.innerHTML = "";
+      state.goals.forEach((g) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn";
+        btn.textContent = state.lang === "bn" ? g.label_bn : g.label_en;
+        if (!g.supported_by_ml) {
+          btn.disabled = true;
+          btn.title = g.disabled_reason || "Not supported by ML yet";
+        } else {
+          btn.onclick = () => fillGoalTemplate(g);
+        }
+        box.appendChild(btn);
+      });
+    }
+
+    function fillGoalTemplate(g) {
+      state.selectedGoalId = g.id;
+      const district = $("district-select").value || "Rajshahi";
+      const upazila = $("upazila-select").value || "Godagari";
+      const tpl = state.lang === "bn" ? g.template_bn : g.template_en;
+      $("request-box").value = tpl
+        .replace("{district}", district)
+        .replace("{upazila}", upazila)
+        .replace("{season}", "annual")
+        .replace("{constraints}", "")
+        .trim();
+    }
+
+    function getLocationPayload() {
+      const mode = $("loc-mode").value;
+      if (mode === "dropdown") {
+        return { district: $("district-select").value, upazila: $("upazila-select").value };
+      }
+      if (mode === "latlon") {
+        return {
+          latitude: parseFloat($("lat-input").value),
+          longitude: parseFloat($("lon-input").value),
+        };
+      }
+      return null;
+    }
+
+    async function runAdvise() {
+      const msg = $("request-box").value.trim();
+      if (!msg) return;
+      $("status-msg").textContent = "Running pipeline...";
+      const cfg = getActiveConfig();
+      const mlMode = state.demoMode ? "mock" : $("ml-mode").value;
+      const intentProv = state.demoMode ? null : ($("intent-provider").value || null);
+      const intentModel = state.demoMode ? null : ($("intent-model").value.trim() || null);
+
+      try {
+        const res = await fetch("/v1/advise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: msg,
+            goal_id: state.selectedGoalId,
+            location: getLocationPayload(),
+            language: state.lang,
+            season: "annual",
+            ...cfg,
+            intent_provider: intentProv,
+            intent_model: intentModel,
+            ml_mode: mlMode,
+            ml_http_url: $("ml-http-url").value.trim() || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          $("status-msg").textContent = data.message || "Request failed.";
+          return;
+        }
+        renderAdviseResult(data);
+        $("status-msg").textContent = "";
+      } catch {
+        $("status-msg").textContent = "Network error communicating with backend.";
+      }
+    }
+
+    function renderAdviseResult(data) {
+      state.sessionId = data.session_id;
+      $("results-area").classList.remove("hidden");
+      $("detail-card").classList.add("hidden");
+      $("followup-answer").innerHTML = "";
+
+      const isMock = (data.ml_source || "").toUpperCase() === "MOCK";
+      $("mock-banner").classList.toggle("hidden", !isMock);
+
+      const traceBox = $("trace-list");
+      traceBox.innerHTML = "";
+      (data.trace || []).forEach((t) => {
+        const pill = document.createElement("span");
+        pill.className = `trace-pill ${t.status === "ok" ? "ok" : "error"}`;
+        pill.textContent = `${t.step}: ${t.status} (${t.duration_ms}ms)`;
+        traceBox.appendChild(pill);
+      });
+
+      if (data.status === "needs_clarification" || data.status === "unsupported_goal" || data.status === "partial_result") {
+        $("summary-box").innerHTML = `<div class="alert alert-warn">${data.clarifying_question || data.message || data.status}</div>`;
+      } else {
+        $("summary-box").textContent = data.interpretation?.summary || "";
+      }
+
+      const cav = data.interpretation?.caveat;
+      $("caveat-box").textContent = cav || "";
+      $("caveat-box").classList.toggle("hidden", !cav);
+
+      const ds = data.interpretation?.data_status_note;
+      $("data-status-box").textContent = ds || "";
+      $("data-status-box").classList.toggle("hidden", !ds);
+
+      const grid = $("options-grid");
+      grid.innerHTML = "";
+      (data.options || []).forEach((opt) => {
+        const card = document.createElement("div");
+        card.className = "option-card";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>Option ${opt.rank}</strong>
+            <span class="score-badge">Score: ${opt.score}</span>
+          </div>
+          <div style="margin:6px 0; font-weight:600;">${opt.name}</div>
+          <div style="font-size:0.9rem; color:var(--muted);">${opt.reason}</div>
+        `;
+        card.onclick = () => selectOption(opt.rank, card);
+        grid.appendChild(card);
+      });
+
+      $("dbg-meta").textContent = JSON.stringify({ ml_source: data.ml_source, trace: data.trace }, null, 2);
+      $("dbg-intent").textContent = JSON.stringify(data.intent || {}, null, 2);
+      $("dbg-layer2").textContent = JSON.stringify(data.layer2_summary || {}, null, 2);
+      $("dbg-ml").textContent = JSON.stringify(data.ml_payload || {}, null, 2);
+      $("dbg-prompts").textContent = JSON.stringify(data.debug?.prompts || [], null, 2);
+    }
+
+    async function selectOption(n, cardEl) {
+      document.querySelectorAll(".option-card").forEach((c) => c.classList.remove("selected"));
+      cardEl.classList.add("selected");
+      const cfg = getActiveConfig();
+      const res = await fetch(`/v1/advise/${state.sessionId}/option/${n}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cfg),
+      });
+      const data = await res.json();
+      const d = data.detail || {};
+      $("detail-card").classList.remove("hidden");
+      $("detail-body").innerHTML = `
+        <h4>${d.title || "Option " + n}</h4>
+        <ul>${(d.season_breakdown || []).map((s) => `<li>${s}</li>`).join("")}</ul>
+        <p><strong>Metrics:</strong> ${d.metrics_summary || ""}</p>
+        <p><strong>Environment Fit:</strong> ${d.telemetry_fit || ""}</p>
+        <p class="alert alert-warn">${d.caveat || ""}</p>
+      `;
+    }
+
+    async function sendFollowup() {
+      const q = $("followup-input").value.trim();
+      if (!q || !state.sessionId) return;
+      const cfg = getActiveConfig();
+      const res = await fetch(`/v1/advise/${state.sessionId}/followup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: q, ...cfg }),
+      });
+      const data = await res.json();
+      if (data.detail) {
+        $("followup-answer").innerHTML = `<div class="alert alert-ok"><strong>${data.detail.title}</strong>: ${data.detail.metrics_summary}</div>`;
+      } else {
+        $("followup-answer").innerHTML = `<div class="alert alert-ok">${data.answer || ""}</div>`;
+      }
+    }
+
+    // Event wiring
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        $("tab-advisor").classList.toggle("hidden", tab !== "advisor");
+        $("tab-settings").classList.toggle("hidden", tab !== "settings");
+      };
+    });
+
+    $("loc-mode").onchange = () => {
+      const m = $("loc-mode").value;
+      $("loc-dd-district").classList.toggle("hidden", m !== "dropdown");
+      $("loc-dd-upazila").classList.toggle("hidden", m !== "dropdown");
+      $("loc-lat-wrap").classList.toggle("hidden", m !== "latlon");
+      $("loc-lon-wrap").classList.toggle("hidden", m !== "latlon");
+    };
+
+    $("district-select").onchange = renderUpazilas;
+    $("lang-select").onchange = () => {
+      state.lang = $("lang-select").value;
+      renderDistricts();
+      renderGoals();
+    };
+    $("btn-demo").onclick = () => {
+      state.demoMode = !state.demoMode;
+      $("btn-demo").textContent = `Demo Mode: ${state.demoMode ? "ON" : "OFF"}`;
+    };
+    $("btn-theme").onclick = () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+    };
+    $("remember-keys").onchange = () => {
+      const on = $("remember-keys").checked;
+      $("remember-warn").classList.toggle("hidden", !on);
+      if (!on) localStorage.removeItem("farmscale_keys");
+    };
+    $("btn-send").onclick = runAdvise;
+    $("btn-followup").onclick = sendFollowup;
+
+    initProviderSections();
+    loadGazetteerAndGoals();
+  </script>
+</body>
+</html>
