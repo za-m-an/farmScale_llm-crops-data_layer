@@ -89,3 +89,22 @@ def test_webhook_location_stub():
     )
     assert r.status_code == 200
     assert r.json()["location"]["upazila"] == "Niamatpur"
+
+
+def test_cache_page_and_endpoints():
+    r_page = client.get("/cache")
+    assert r_page.status_code == 200
+    assert "Local Data & Offline Cache" in r_page.text
+
+    r_bundle = client.get("/v1/cache/bundle?download=1")
+    assert r_bundle.status_code == 200
+    assert "attachment" in r_bundle.headers.get("content-disposition", "")
+    data = r_bundle.json()
+    assert "crops" in data and "local_crops" in data and "gazetteer" in data and "goals" in data
+
+    r_ds = client.get("/v1/cache/dataset/crops?download=1")
+    assert r_ds.status_code == 200
+    assert "crops" in r_ds.json()
+
+    r_missing = client.get("/v1/cache/dataset/unknown")
+    assert r_missing.status_code == 404

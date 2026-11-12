@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from crop_layer.loader import get_gazetteer
+from crop_layer.loader import DATA_DIR as CROP_DATA_DIR, get_gazetteer
 from llm_layer.goals import GOALS
 from llm_layer.location import ManualLocationProvider, WebhookLocationProvider
 from llm_layer.pipeline import run_advise, run_followup, run_option_detail
@@ -163,6 +163,54 @@ def serve_tester() -> FileResponse:
     if not index.exists():
         raise HTTPException(status_code=404, detail="tester.html not found")
     return FileResponse(index)
+
+
+@app.get("/cache")
+def serve_cache_page() -> FileResponse:
+    page = WEB_DIR / "cache.html"
+    if not page.exists():
+        raise HTTPException(status_code=404, detail="cache.html not found")
+    return FileResponse(page)
+
+
+@app.get("/v1/cache/bundle")
+def api_cache_bundle(download: bool = Query(default=False)) -> JSONResponse:
+    import json
+    from datetime import datetime, timezone
+
+    def _read_crop_json(filename: str) -> Any:
+        with (CROP_DATA_DIR / filename).open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    bundle = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "crops": _read_crop_json("crops.json"),
+        "local_crops": _read_crop_json("local_crops.json"),
+        "gazetteer": _read_crop_json("gazetteer.json"),
+        "crop_id_map": _read_crop_json("crop_id_map.json"),
+        "goals": GOALS,
+    }
+    headers = {"Content-Disposition": 'attachment; filename="farmscale-offline-bundle.json"'} if download else {}
+    return JSONResponse(content=bundle, headers=headers)
+
+
+@app.get("/v1/cache/dataset/{name}")
+def api_cache_dataset(name: str, download: bool = Query(default=False)) -> JSONResponse:
+    import json
+
+    allowed = {
+        "crops": "crops.json",
+        "local_crops": "local_crops.json",
+        "gazetteer": "gazetteer.json",
+        "crop_id_map": "crop_id_map.json",
+    }
+    filename = allowed.get(name)
+    if not filename:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset '{name}'.")
+    with (CROP_DATA_DIR / filename).open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'} if download else {}
+    return JSONResponse(content=data, headers=headers)
 
 
 @app.get("/v1/goals")
